@@ -26,11 +26,14 @@ const RegisterPage = () => {
                 username,
                 password,
                 email,
+                role: "CUSTOMER",
             });
 
-            setSuccess("Đăng ký thành công! Bạn sẽ được chuyển hướng...");
-            setError("");
-            setTimeout(() => navigate("/login"), 2000);
+            if (res) {
+                setSuccess("Đăng ký thành công! Bạn sẽ được chuyển hướng...");
+                setError("");
+                navigate("/login");
+            }
         } catch (err) {
             toast.error(`Mất kết nối`, {
                 position: "bottom-right",

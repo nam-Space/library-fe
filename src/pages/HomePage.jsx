@@ -1,30 +1,25 @@
+import useGetBooks from "hooks/useGetBooks";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
 const HomePage = () => {
     const navigate = useNavigate();
+    const { loading, books, getAllBooks } = useGetBooks();
 
-    // Danh sách sách giả định (dữ liệu cứng để hiển thị giao diện)
-    const books = [
-        {
-            id: 1,
-            title: "Lập Trình Python Cơ Bản",
-            author: "Nguyễn Văn A",
-            image: "https://down-vn.img.susercontent.com/file/dd0a7f2645100f64b802968777d14e9f",
-        },
-        {
-            id: 2,
-            title: "Học Máy và Trí Tuệ Nhân Tạo",
-            author: "Trần Thị B",
-            image: "https://cantholib.org.vn/uploads/news/gts/thang04/tri-tue-nhan-tao.jpg",
-        },
-        {
-            id: 3,
-            title: "Cấu Trúc Dữ Liệu và Giải Thuật",
-            author: "Lê Văn C",
-            image: "https://images.vnuhcmpress.edu.vn/Picture/2023/5/16/image-20230516140731083.jpg",
-        },
-    ];
+    if (loading) {
+        return (
+            <div className="container mt-5 text-center">
+                <div
+                    className="spinner-border text-primary"
+                    role="status"
+                    style={{ width: "4rem", height: "4rem" }}
+                >
+                    <span className="visually-hidden">Đang tải...</span>
+                </div>
+                <p className="mt-3">Đang tải dữ liệu, vui lòng đợi...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="container mt-4">
@@ -45,9 +40,17 @@ const HomePage = () => {
                                 <p className="card-text">
                                     Tác giả: {book.author}
                                 </p>
+                                <p className="card-text">
+                                    <strong>Đơn giá:</strong>{" "}
+                                    <strong className="text-success">
+                                        {Math.round(book.price)} VNĐ
+                                    </strong>
+                                </p>
                                 <button
                                     className="btn btn-primary"
-                                    onClick={() => navigate("/books/1")}
+                                    onClick={() =>
+                                        navigate(`/books/${book.id}`)
+                                    }
                                 >
                                     Xem chi tiết
                                 </button>

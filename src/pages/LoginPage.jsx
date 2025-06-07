@@ -1,13 +1,23 @@
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { callLogin } from "config/api";
 import { toast } from "react-toastify";
+import { callGetAccount } from "config/api";
+import { UserContext } from "utils/UserContext";
+import _ from "lodash";
 
 const LoginPage = () => {
+    const { user, setUser } = useContext(UserContext);
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if (!_.isEmpty(user)) {
+            navigate("/");
+        }
+    }, [user]);
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -17,9 +27,28 @@ const LoginPage = () => {
                 username,
                 password,
             });
-
-            localStorage.setItem("currentUser-healthcare", res);
-            navigate("/books"); // Điều hướng đến danh sách sách sau khi đăng nhập
+            if (
+                res.detail &&
+                res.detail ==
+                    "No active account found with the given credentials"
+            ) {
+                return;
+            }
+            const { access, refresh } = res;
+            const resAcc = await callGetAccount({
+                headers: {
+                    Authorization: "Bearer " + access,
+                },
+            });
+            setUser(resAcc);
+            localStorage.setItem(
+                "currentUser-library",
+                JSON.stringify({
+                    ...resAcc,
+                    access,
+                })
+            );
+            navigate("/");
         } catch (err) {
             toast.error(`Mất kết nối`, {
                 position: "bottom-right",

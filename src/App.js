@@ -9,6 +9,8 @@ import BookDetailPage from 'pages/BookDetailPage';
 import BorrowedBooksPage from 'pages/BorrowedBooksPage';
 import ReturnBookPage from 'pages/ReturnBookPage';
 import SearchBookPage from 'pages/SearchBookPage';
+import StatsBorrowedBooksPage from 'pages/StatsBorrowedBooksPage';
+import StatsReturnBookPage from 'pages/StatsReturnBookPage';
 
 function App() {
   return (
@@ -21,7 +23,9 @@ function App() {
         <Route path="/books" element={<SearchBookPage />} />
         <Route path="/books/:id" element={<BookDetailPage />} />
         <Route path="/borrowed" element={<BorrowedBooksPage />} />
+        <Route path="/stats-borrowed" element={<StatsBorrowedBooksPage />} />
         <Route path="/return-book" element={<ReturnBookPage />} />
+        <Route path="/stats-return-book" element={<StatsReturnBookPage />} />
       </Routes>
     </>
   );

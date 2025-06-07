@@ -1,156 +1,201 @@
-import React, { useState } from "react";
+import { callUpdateBorrowBook } from "config/api";
+import { callReturnBorrowBook } from "config/api";
+import useGetBorrowBooks from "hooks/useGetBorrowBooks";
+import React, { useContext, useState } from "react";
+import { UserContext } from "utils/UserContext";
 
 const ReturnBookPage = () => {
-    // Dữ liệu sách đã mượn (giả lập)
-    const initialBooks = [
-        {
-            id: 1,
-            title: "Hệ Cơ Sở Dữ Liệu",
-            author: "Nguyễn Văn A",
-            borrowed_date: "2025-05-10",
-            due_date: "2025-06-01",
-            total_quantity: 10,
-            price: 10000,
-        },
-        {
-            id: 2,
-            title: "Nhập Môn Trí Tuệ Nhân Tạo 1",
-            author: "Trần Thị B",
-            borrowed_date: "2025-05-20",
-            due_date: "2025-06-10",
-            total_quantity: 10,
-            price: 20000,
-        },
-        {
-            id: 3,
-            title: "Nhập Môn Trí Tuệ Nhân Tạo 2",
-            author: "Trần Thị B",
-            borrowed_date: "2025-05-20",
-            due_date: "2025-06-10",
-            total_quantity: 10,
-            price: 20000,
-        },
-        {
-            id: 4,
-            title: "Nhập Môn Trí Tuệ Nhân Tạo 3",
-            author: "Trần Thị B",
-            borrowed_date: "2025-05-20",
-            due_date: "2025-06-10",
-            total_quantity: 10,
-            price: 20000,
-        },
-        {
-            id: 5,
-            title: "Nhập Môn Trí Tuệ Nhân Tạo 4",
-            author: "Trần Thị B",
-            borrowed_date: "2025-05-20",
-            due_date: "2025-06-10",
-            total_quantity: 10,
-            price: 20000,
-        },
-    ];
+    const { user } = useContext(UserContext);
 
-    const [books, setBooks] = useState(initialBooks); // Chưa trả
-    const [returnedBooks, setReturnedBooks] = useState([]); // Đã trả
-    const [successMsg, setSuccessMsg] = useState("");
+    const {
+        loading,
+        borrowBooks: allBookBorrowReturned,
+        getAllBorrowBooks,
+    } = useGetBorrowBooks(`user_id=${user?.id}`);
 
-    const handleReturn = (bookId) => {
-        const returnedBook = books.find((b) => b.id === bookId);
-        setBooks(books.filter((b) => b.id !== bookId));
-        setReturnedBooks([returnedBook, ...returnedBooks]);
-        setSuccessMsg(`✅ Đã trả sách: "${returnedBook.title}"`);
+    const borrowBooks = allBookBorrowReturned.filter(
+        (borrowReturned) => !borrowReturned.returned
+    );
+    const returnedBooks = allBookBorrowReturned.filter(
+        (borrowReturned) => borrowReturned.returned
+    );
+    const [deletingId, setDeletingId] = useState(null);
+
+    const handleSubmit = async (borrowBook) => {
+        setDeletingId(borrowBook.id);
+
+        await callUpdateBorrowBook(borrowBook.id, {
+            ...borrowBook,
+            status: "pending",
+            returned: true,
+        });
+        await getAllBorrowBooks(`user_id=${user?.id}`);
+
+        setDeletingId(null);
     };
+
+    // Hiển thị spinner khi đang loading
+    if (loading) {
+        return (
+            <div className="container mt-5 text-center">
+                <div
+                    className="spinner-border text-primary"
+                    role="status"
+                    style={{ width: "4rem", height: "4rem" }}
+                >
+                    <span className="visually-hidden">Đang tải...</span>
+                </div>
+                <p className="mt-3">Đang tải dữ liệu, vui lòng đợi...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="container mt-5">
             <h3 className="mb-4 text-center">↩️ Danh sách sách đã mượn</h3>
 
-            {successMsg && (
-                <div className="alert alert-success text-center">
-                    {successMsg}
-                </div>
-            )}
+            <table className="table table-bordered mb-5">
+                <thead className="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Tên sách</th>
+                        <th>Ảnh</th>
+                        <th>Ngày mượn</th>
+                        <th>Hạn chót</th>
+                        <th>Số lượng</th>
+                        <th>Đơn giá</th>
+                        <th>Tổng tiền</th>
+                        <th>Tiền phạt</th>
+                        <th>Thành tiền</th>
+                        <th>Ghi chú</th>
+                        <th>Trạng thái</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {borrowBooks.map((borrowBook, idx) => (
+                        <tr key={borrowBook.id}>
+                            <td>{borrowBook.id}</td>
+                            <td>{borrowBook.book_title}</td>
+                            <td>
+                                <img
+                                    src={borrowBook.img_url}
+                                    style={{ objectFit: "cover" }}
+                                    width={100}
+                                    height={100}
+                                    alt="book-img"
+                                />
+                            </td>
+                            <td>{borrowBook.borrowed_date}</td>
+                            <td>{borrowBook.due_date}</td>
 
-            {books.length === 0 ? (
-                <div className="alert alert-info text-center">
-                    Bạn không còn sách nào cần trả.
-                </div>
-            ) : (
-                <table className="table table-bordered mb-5">
-                    <thead className="table-light">
-                        <tr>
-                            <th>#</th>
-                            <th>Tên sách</th>
-                            <th>Tác giả</th>
-                            <th>Ngày mượn</th>
-                            <th>Hạn trả</th>
-                            <th>Số lượng</th>
-                            <th>Đơn giá</th>
-                            <th>Tổng tiền</th>
-                            <th>Hành động</th>
+                            <td>{borrowBook.quantity}</td>
+                            <td>{Math.round(borrowBook.price)} VNĐ</td>
+                            <td>
+                                {borrowBook.quantity *
+                                    Math.round(borrowBook.price)}{" "}
+                                VNĐ
+                            </td>
+                            <td>{Math.round(borrowBook.punish)} VNĐ</td>
+                            <td>
+                                {borrowBook.quantity *
+                                    Math.round(borrowBook.price) +
+                                    Math.round(borrowBook.punish)}{" "}
+                                VNĐ
+                            </td>
+                            <td>{borrowBook.note}</td>
+                            <td className="fw-bold text-danger">Chưa trả</td>
+                            <td>
+                                <button
+                                    className="btn btn-danger btn-sm"
+                                    onClick={() => handleSubmit(borrowBook)}
+                                    disabled={deletingId === borrowBook.id} // Vô hiệu nút khi đang xử lý
+                                >
+                                    {deletingId === borrowBook.id ? (
+                                        <>
+                                            <span
+                                                className="spinner-border spinner-border-sm me-2"
+                                                role="status"
+                                                aria-hidden="true"
+                                            ></span>
+                                            Đang trả...
+                                        </>
+                                    ) : (
+                                        "Trả nốt"
+                                    )}
+                                </button>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        {books.map((book, idx) => (
-                            <tr key={book.id}>
-                                <td>{idx + 1}</td>
-                                <td>{book.title}</td>
-                                <td>{book.author}</td>
-                                <td>{book.borrowed_date}</td>
-                                <td>{book.due_date}</td>
-                                <td>{book.total_quantity}</td>
-                                <td>{book.price}</td>
-                                <td>{book.price * book.total_quantity}</td>
-                                <td>
-                                    <button
-                                        className="btn btn-danger btn-sm"
-                                        onClick={() => handleReturn(book.id)}
-                                    >
-                                        Trả nốt
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            )}
+                    ))}
+                </tbody>
+            </table>
 
             {/* Danh sách sách đã trả */}
             <h4 className="mb-3">📘 Danh sách sách đã trả</h4>
-            {returnedBooks.length === 0 ? (
-                <div className="alert alert-secondary">
-                    Chưa có sách nào được trả.
-                </div>
-            ) : (
-                <table className="table table-striped">
-                    <thead className="table-light">
-                        <tr>
-                            <th>#</th>
-                            <th>Tên sách</th>
-                            <th>Tác giả</th>
-                            <th>Ngày mượn</th>
-                            <th>Hạn trả</th>
-                            <th>Số lượng</th>
-                            <th>Đơn giá</th>
-                            <th>Tổng tiền</th>
+            <table className="table table-striped">
+                <thead className="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Tên sách</th>
+                        <th>Ảnh</th>
+                        <th>Ngày mượn</th>
+                        <th>Ngày trả</th>
+                        <th>Hạn chót</th>
+                        <th>Số lượng</th>
+                        <th>Đơn giá</th>
+                        <th>Tổng tiền</th>
+                        <th>Tiền phạt</th>
+                        <th>Thành tiền</th>
+                        <th>Ghi chú</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {returnedBooks.map((returnBook, idx) => (
+                        <tr key={idx}>
+                            <td>{returnBook.id}</td>
+                            <td>{returnBook.book_title}</td>
+                            <td>
+                                <img
+                                    src={returnBook.img_url}
+                                    style={{ objectFit: "cover" }}
+                                    width={100}
+                                    height={100}
+                                    alt="book-img"
+                                />
+                            </td>
+                            <td>{returnBook.borrowed_date}</td>
+                            <td>{returnBook.return_date}</td>
+                            <td>{returnBook.due_date}</td>
+                            <td>{returnBook.quantity}</td>
+                            <td>{Math.round(returnBook.price)} VNĐ</td>
+                            <td>
+                                {returnBook.quantity *
+                                    Math.round(returnBook.price)}{" "}
+                                VNĐ
+                            </td>
+                            <td>{Math.round(returnBook.punish)} VNĐ</td>
+                            <td>
+                                {returnBook.quantity *
+                                    Math.round(returnBook.price) +
+                                    Math.round(returnBook.punish)}{" "}
+                                VNĐ
+                            </td>
+                            <td>{returnBook.note}</td>
+                            <td>
+                                {returnBook.status === "pending" && (
+                                    <p className="text-secondary">Đang duyệt</p>
+                                )}
+                                {returnBook.status === "returned" && (
+                                    <p className="fw-bold text-success">
+                                        Đã trả
+                                    </p>
+                                )}
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        {returnedBooks.map((book, idx) => (
-                            <tr key={book.id}>
-                                <td>{idx + 1}</td>
-                                <td>{book.title}</td>
-                                <td>{book.author}</td>
-                                <td>{book.borrowed_date}</td>
-                                <td>{book.due_date}</td>
-                                <td>{book.total_quantity}</td>
-                                <td>{book.price}</td>
-                                <td>{book.price * book.total_quantity}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            )}
+                    ))}
+                </tbody>
+            </table>
         </div>
     );
 };
